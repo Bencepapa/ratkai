@@ -1,0 +1,13 @@
+-- -*- haskell -*-
+[
+ -- ROOM 1 room
+  [
+     CompactMessage 1  -- Vörös fény villog az arcodba, egy női hang mond valamit, amit nem értesz. Megpróbálsz megmozdulni de mintha szurokba lennél ragadva. Újra hallod a női hangot, most érthetőbben: '... vészhelyzeti protokol! Ébredjen!'.
+  ,  CompactMessage 2  -- Kijáratok: fel ki ék
+  ]
+, -- ROOM 2 Felébredni
+  [
+     CompactMessage 3  -- Megpróbálod kinyitni a szemed de össze van ragadva. Valami szürcsögve lefolyik valami lefolyón és rólad mintha a takarót lerántanák hirtelen hideg levegő csap meg. Végre tudsz mozogni, letörlöd az arcod és végre ki tudod nyitni a szemed. Még homályosan látsz de meg kell keresned a ruhád. Nézz körül!
+  ,  CompactMessage 4  -- Kijáratok: be fel
+  ]
+]

@@ -1,0 +1,116 @@
+<!--Saved by Quest 5.8.6836.13983-->
+<asl version="580">
+  <include ref="English.aslx" />
+  <include ref="Core.aslx" />
+  <game name="Kék Lidérc">
+    <inherit name="devmode" />
+    <gameid>a7bdfc9b-c8fe-4d88-8d57-f3e3da3ecc67</gameid>
+    <version>1.0</version>
+    <firstpublished>2023</firstpublished>
+    <feature_devmode />
+    <attr name="devmode_changepovpos" type="boolean">false</attr>
+    <gridmap />
+    <mapsize type="int">100</mapsize>
+    <attr name="autodescription_youarein_useprefix" type="boolean">false</attr>
+    <pov type="object">player</pov>
+  </game>
+  <object name="room">
+    <inherit name="editor_room" />
+    <isroom />
+    <description>Vörös fény villog az arcodba, egy női hang mond valamit, amit nem értesz. Megpróbálsz megmozdulni de mintha szurokba lennél ragadva. Újra hallod a női hangot, most érthetőbben: '... vészhelyzeti protokol! Ébredjen!'.</description>
+    <exitslistprefix>Megpróbálhatsz</exitslistprefix>
+    <dropdestination type="object">player</dropdestination>
+    <object name="player">
+      <inherit name="editor_object" />
+      <inherit name="editor_player" />
+    </object>
+    <exit alias="up" to="Felébredni">
+      <inherit name="updirection" />
+    </exit>
+    <exit alias="out" to="Felébredni">
+      <inherit name="outdirection" />
+    </exit>
+    <command name="mászik">
+      <scope>Start</scope>
+      <pattern>mászik</pattern>
+      <script>
+        msg ("Megyek már.......")
+      </script>
+    </command>
+    <verb name="menj">
+      <pattern>menj #</pattern>
+      <defaulttext>megyek</defaulttext>
+    </verb>
+    <exit alias="northeast" to="Felébredni">
+      <inherit name="northeastdirection" />
+    </exit>
+  </object>
+  <object name="Felébredni">
+    <inherit name="editor_room" />
+    <description>Megpróbálod kinyitni a szemed de össze van ragadva. Valami szürcsögve lefolyik valami lefolyón és rólad mintha a takarót lerántanák hirtelen hideg levegő csap meg. Végre tudsz mozogni, letörlöd az arcod és végre ki tudod nyitni a szemed. Még homályosan látsz de meg kell keresned a ruhád. Nézz körül!</description>
+    <usedefaultprefix type="boolean">false</usedefaultprefix>
+    <prefix>Éppen próbálsz</prefix>
+    <exitslistprefix>Mehetsz</exitslistprefix>
+    <exit alias="in" to="room">
+      <inherit name="indirection" />
+    </exit>
+    <exit alias="up" to="Felébredni">
+      <inherit name="updirection" />
+      <lookonly />
+      <look type="string"></look>
+    </exit>
+    <object name="ruha">
+      <inherit name="editor_object" />
+      <alias>öltözet; ruha; gúnya</alias>
+      <scenery type="boolean">false</scenery>
+      <look>Mindenki ilyet visel errefelé. A neved alatt a TAKARÍTÓ van behímezve.</look>
+      <displayverbs type="stringlist">
+        <value>Look at</value>
+        <value>Take</value>
+        <value>néz</value>
+        <value>vesz; felvesz; f;</value>
+      </displayverbs>
+      <takemsg>Magadra veszed a ruhát</takemsg>
+      <dropmsg>meztelenre vetkőzől.</dropmsg>
+      <attr name="néz">TAKARÍTÓ</attr>
+      <feature_wearable />
+      <vesz type="script">
+        msg ("Felöltöd az ismerős ruhát")
+        AddToInventory (ruha)
+      </vesz>
+      <attr name="szakít" type="script">
+        msg ("Elszakítod az átkozott ruhát!")
+        RemoveObject (ruha)
+      </attr>
+    </object>
+  </object>
+  <verb>
+    <pattern>felébred</pattern>
+  </verb>
+  <verb>
+    <property type="string"></property>
+    <pattern>ébred</pattern>
+    <scope>room</scope>
+  </verb>
+  <command>
+    <pattern>ugorj #text#</pattern>
+    <script>
+      msg (text + " ugrasz")
+    </script>
+  </command>
+  <verb>
+    <property>néz</property>
+    <pattern>néz; n; v; vizsgál</pattern>
+    <defaultexpression>Nem látsz rajta semmi érdekeset</defaultexpression>
+  </verb>
+  <verb>
+    <property>vesz</property>
+    <pattern>vesz; felvesz; f</pattern>
+    <defaultexpression>Nem tudod felvenni</defaultexpression>
+  </verb>
+  <verb>
+    <property>szakít</property>
+    <pattern>szakít</pattern>
+    <defaultexpression>Nem akarod elszakítani</defaultexpression>
+  </verb>
+</asl>

@@ -1,0 +1,6 @@
+-- -*- haskell -*-
+[ (1 , "Vörös fény villog az arcodba, egy női hang mond valamit, amit nem értesz. Megpróbálsz megmozdulni de mintha szurokba lennél ragadva. Újra hallod a női hangot, most érthetőbben: '... vészhelyzeti protokol! Ébredjen!'. ")
+, (2 , "Kijáratok: fel ki ék ")
+, (3 , "Megpróbálod kinyitni a szemed de össze van ragadva. ")
+, (4 , "Kijáratok: be fel ")
+]

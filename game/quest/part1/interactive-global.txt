@@ -1,0 +1,14 @@
+-- -*- haskell -*-
+[ InputDispatch [0x1d]  -- felad
+    [      Sleep 5  -- SetPlayerStatus 255
+    ]
+, InputDispatch [0x22]  -- néz  
+    [      Message 19  -- Nem látsz rajta semmi érdekeset
+    ]
+, InputDispatch [0x23]  -- vesz 
+    [      Message 20  -- Nem tudod felvenni
+    ]
+, InputDispatch [0x24]  -- szakí
+    [      Message 21  -- Nem akarod elszakítani
+    ]
+]

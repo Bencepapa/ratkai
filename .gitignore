@@ -1,2 +1,6 @@
 /*.cabal
 /_build
+/.stack-work
+/hl2-*
+
+
