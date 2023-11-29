@@ -91,9 +91,9 @@ for item in root.findall('./verb'):
     }
     verbid+=1
 
-print(f"\n objects: {objects}")
-print(f"\n rooms: {rooms}")
-print(f"\n verbs: {verbs}")
+print(f"\n objects: {len(objects)}")
+print(f"\n rooms: {len(rooms)}")
+print(f"\n verbs: {len(verbs)}")
 
 
 texts1 = {
@@ -233,6 +233,7 @@ with open(outpath+"interactive-global.txt", "w", encoding="utf-8") as f:
             if comma == "" :
                 comma = ","
     f.write("]\n")
+
     
 
 with open(outpath+"text2.txt", "w", encoding="utf-8") as f:
@@ -242,6 +243,8 @@ with open(outpath+"text2.txt", "w", encoding="utf-8") as f:
     for textString in texts:
        text = texts[textString]
        f.write(f"{comma} ({text['id']} , \"{textString}\")\n")
+       if (len(textString)> 250):
+           print(f"Too long text2 {len(textString)} chars: ' {textString}'")
        if comma == "" :
            comma = ","
     f.write("]\n")
@@ -253,6 +256,20 @@ with open(outpath+"text1.txt", "w", encoding="utf-8") as f:
     for textString in texts1:
        text = texts1[textString]
        f.write(f"{comma} ({text['id']} , {json.dumps(textString, ensure_ascii=False)})\n")
+       if (len(textString)> 250):
+           print(f"Too long text1 {len(textString)} chars: '{textString}'")
        if comma == "" :
            comma = ","
+    f.write("]\n")
+
+with open(outpath+"help.txt", "w", encoding="utf-8") as f:
+    f.write("-- -*- haskell -*-\n")
+    f.write("[")
+    comma = ""
+    for roomName in rooms:
+        room = rooms[roomName]
+        f.write(f"{comma} -- ROOM {room['id']} {roomName}\n")
+        f.write("  0")
+        if comma == "" :
+            comma = ","
     f.write("]\n")
