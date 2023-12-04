@@ -1,5 +1,4 @@
 -- -*- haskell -*-
-[ -- ROOM 1
-  0 
-, 0
-]
+[ -- ROOM 1 room
+  0, -- ROOM 2 Felébredni
+  0]

@@ -17,10 +17,10 @@ import Text.Printf
 
 main :: IO ()
 main = do
-    let inputPath = "game/bosszu/full"
+    let inputPath = "game/quest/part1"
 
     assets <- loadTextFiles inputPath
-    emit "_build/tvc/ratkai" $ Ratkai.game assets
+    emit "_build/tvc/kekliderc" $ Ratkai.game assets
 
 emit :: String -> Z80ASM -> IO ()
 emit name prog = do

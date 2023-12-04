@@ -11,19 +11,51 @@ roomid = 1
 verbid = 0x20
 rooms = {}
 objects = {}
-verbs = {
-    "felad; befej": {
+builinverbs = [ (0x01,["é    ", "észak"])
+, (0x02,["ék   "])
+, (0x03,["k    ", "kelet"])
+, (0x04,["dk   "])
+, (0x05,["d    ", "dél  "])
+, (0x06,["dny  "])
+, (0x07,["ny   ", "nyuga"])
+, (0x08,["ény  "])
+, (0x09,["fel  ", "föl  "])
+, (0x0a,["le   "])
+, (0x0b,["be   ", "bemeg", "belép"])
+, (0x0c,["ki   ", "kimeg", "kilép"])
+, (0x0d,["n    ", "néz  ", "körül", "nézek"])
+, (0x0e,["f    ", "fog  ", "visz "])
+, (0x0f,["rak  ", "r    ", "letes", "tesz ", "lerak"])
+, (0x10,["l    ", "lista", "leltá"])
+, (0x12,["load ", "betöl"])
+, (0x13,["save ", "felve", "elmen"])
+, (0x14,["erő  ", "e    ", "eredm", "pont ", "energ"])
+, (0x15,["v    ", "vizsg", "megvi", "kutat", "kikut"])
+, (0x16,["s    ", "segít"])
+, (0x17,["játék", "állás", "helyz"])
+, (0x18,["magnó", "kazet"])
+, (0x19,["disk ", "diskr", "lemez", "flopp"])
+, (0x1a,["undo ", "bom  ", "vel  "])
+, (0x1b,["save ", "qsave", "ment ", "menté", "elmen"]) # same as 0x12?
+, (0x1c,["load ", "qload", "tölté", "betöl"])
+]
+verbs = {}
+for verb in builinverbs:
+    #verb = builinverbs[verbi]
+    verbs[verb[1][0].strip()] = {
+        'id': verb[0],
+        'aliases': verb[1]
+    }
+verbs["felad; befej"] = {
         'id': 0x1d,
         'aliases': ["felad", "befej"],
         'script': "SetPlayerStatus 255"
-    },
-    "haszn": {
+    }
+verbs["haszn"] = {
         'id': 0x1e,
         'aliases': ['haszn']
     }
 
-
-}
 startroom = ""
 
 exitConv = {
@@ -93,7 +125,9 @@ for item in root.findall('./verb'):
 
 print(f"\n objects: {len(objects)}")
 print(f"\n rooms: {len(rooms)}")
+print(f"\n rooms: {json.dumps(rooms, ensure_ascii=False, indent=2)}")
 print(f"\n verbs: {len(verbs)}")
+#print(f"\n verbs: {json.dumps(verbs, ensure_ascii=False, indent=2)}")
 
 
 texts1 = {
@@ -169,44 +203,18 @@ with open(outpath+"enter.txt", "w", encoding="utf-8") as f:
 
 
 
-builinverbs = [ (0x01,["é    ", "észak"])
-, (0x02,["ék   "])
-, (0x03,["k    ", "kelet"])
-, (0x04,["dk   "])
-, (0x05,["d    ", "dél  "])
-, (0x06,["dny  "])
-, (0x07,["ny   ", "nyuga"])
-, (0x08,["ény  "])
-, (0x09,["fel  ", "föl  "])
-, (0x0a,["le   "])
-, (0x0b,["be   ", "bemeg", "belép"])
-, (0x0c,["ki   ", "kimeg", "kilép"])
-, (0x0d,["n    ", "néz  ", "körül", "nézek"])
-, (0x0e,["f    ", "fog  ", "visz "])
-, (0x0f,["rak  ", "r    ", "letes", "tesz ", "lerak"])
-, (0x10,["l    ", "lista", "leltá"])
-, (0x12,["load ", "betöl"])
-, (0x13,["save ", "felve", "elmen"])
-, (0x14,["erő  ", "e    ", "eredm", "pont ", "energ"])
-, (0x15,["v    ", "vizsg", "megvi", "kutat", "kikut"])
-, (0x16,["s    ", "segít"])
-, (0x17,["játék", "állás", "helyz"])
-, (0x18,["magnó", "kazet"])
-, (0x19,["disk ", "diskr", "lemez", "flopp"])
-, (0x1a,["undo ", "bom  ", "vel  "])
-, (0x1b,["save ", "qsave", "ment ", "menté", "elmen"])
-, (0x1c,["load ", "qload", "tölté", "betöl"])
-]
+
+
 
 
 with open(outpath+"dict.txt", "w", encoding="utf-8") as f:
     f.write("-- -*- haskell -*-\n")
     f.write("[")
     comma = ""
-    for tuple in builinverbs:
-        f.write(f"{comma} (0x{tuple[0]:02x} , {json.dumps(tuple[1], ensure_ascii=False)})\n")
-        if comma == "" :
-           comma = ","
+    # for tuple in builinverbs:
+    #     f.write(f"{comma} (0x{tuple[0]:02x} , {json.dumps(tuple[1], ensure_ascii=False)})\n")
+    #     if comma == "" :
+    #        comma = ","
     for verbString in verbs:
         verb = verbs[verbString]
         f.write(f"{comma} (0x{verb['id']:02x} , {json.dumps(verb['aliases'], ensure_ascii=False)})\n")
@@ -234,7 +242,43 @@ with open(outpath+"interactive-global.txt", "w", encoding="utf-8") as f:
                 comma = ","
     f.write("]\n")
 
-    
+with open(outpath+"interactive-local.txt", "w", encoding="utf-8") as f:
+    f.write("-- -*- haskell -*-\n")
+    f.write("[")
+    comma = ""
+    for roomName in rooms:
+        room = rooms[roomName]
+        comma2 = ""
+        f.write(f"{comma} -- ROOM {room['id']} {roomName}\n")
+        f.write(f"  [")
+        for exitDir in room['exits']:
+            exit = room['exits'][exitDir]
+            verb = verbs[exitDir]
+            f.write(f"  {comma2} InputDispatch [0x{verb['id']:02x}]  -- {verb['aliases'][0]}\n")
+            f.write("    [")
+            f.write(f" MoveTo {rooms[exit['toRoom']]['id']}   -- {exit['toRoom']}\n")
+            if comma2 == "" :
+                comma2 = ","
+            f.write("    ]\n")
+        for verbString in verbs:
+            verb = verbs[verbString]
+            if verb.get('default') or verb.get('script'):
+                f.write(f"  {comma2} InputDispatch [0x{verb['id']:02x}]  -- {verb['aliases'][0]}\n")
+                f.write("    [")
+                defaultText = verb.get('default')
+                if defaultText:
+                    f.write(f" Message {Text1(defaultText)}  -- {defaultText}\n")
+                scriptText = verb.get('script')
+                if scriptText:
+                    f.write(f"      Sleep 5  -- {scriptText}\n") #proper script parser here
+                f.write("    ]\n")
+                if comma2 == "" :
+                    comma2 = ","
+        f.write(f"  ]\n")
+        if comma == "" :
+            comma = ","
+    f.write("]\n")
+
 
 with open(outpath+"text2.txt", "w", encoding="utf-8") as f:
     f.write("-- -*- haskell -*-\n")

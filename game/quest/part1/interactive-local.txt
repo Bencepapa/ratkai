@@ -1,25 +1,45 @@
 -- -*- haskell -*-
-[ -- ROOM 1
-  [ 
-   InputDispatch [0x0c] -- "ki"
-      [ Assign00 120                   -- 03 78
-      , SetScreen 2 10 2               -- 11 02 0a 02
-      , Chime 3                        -- 14 03
-      , Message 18                    -- 02 9f                -- "  Kitalálta, kidolgozta, megtervezte megrajzolta, összehozta, programozta       Rátkai István         Zene:    Mohos Zoltán & Rátkai Tamás "
-      , Sleep 45                       -- 15 2d
-      , MoveTo 2                       -- 0c 02
-      ]
+[ -- ROOM 1 room
+  [   InputDispatch [0x09]  -- fel  
+    [ MoveTo 2   -- Felébredni
+    ]
+  , InputDispatch [0x0c]  -- ki   
+    [ MoveTo 2   -- Felébredni
+    ]
+  , InputDispatch [0x02]  -- ék   
+    [ MoveTo 2   -- Felébredni
+    ]
+  , InputDispatch [0x1d]  -- felad
+    [      Sleep 5  -- SetPlayerStatus 255
+    ]
+  , InputDispatch [0x22]  -- néz  
+    [ Message 19  -- Nem látsz rajta semmi érdekeset
+    ]
+  , InputDispatch [0x23]  -- vesz 
+    [ Message 20  -- Nem tudod felvenni
+    ]
+  , InputDispatch [0x24]  -- szakí
+    [ Message 21  -- Nem akarod elszakítani
+    ]
   ]
-  ,-- ROOM 2
-    [ 
-   InputDispatch [0x0b] -- "be"
-      [ MoveTo 1                         -- 09 06
-      ]
-  , InputDispatch [0x0e, 0x18] -- "fog magnó"
-      [ Assign00 120                   -- 03 78
-      , SetScreen 2 10 2               -- 11 02 0a 02
-      , Message 17                    -- 02 9f   -- Nem akarod elszakítani
-      , MoveTo 1                       -- 0c 02
-      ]
+, -- ROOM 2 Felébredni
+  [   InputDispatch [0x0b]  -- be   
+    [ MoveTo 1   -- room
+    ]
+  , InputDispatch [0x09]  -- fel  
+    [ MoveTo 2   -- Felébredni
+    ]
+  , InputDispatch [0x1d]  -- felad
+    [      Sleep 5  -- SetPlayerStatus 255
+    ]
+  , InputDispatch [0x22]  -- néz  
+    [ Message 19  -- Nem látsz rajta semmi érdekeset
+    ]
+  , InputDispatch [0x23]  -- vesz 
+    [ Message 20  -- Nem tudod felvenni
+    ]
+  , InputDispatch [0x24]  -- szakí
+    [ Message 21  -- Nem akarod elszakítani
+    ]
   ]
 ]

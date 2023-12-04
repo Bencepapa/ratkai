@@ -13,6 +13,7 @@
     <mapsize type="int">100</mapsize>
     <attr name="autodescription_youarein_useprefix" type="boolean">false</attr>
     <pov type="object">player</pov>
+    <statusattributes type="stringdictionary" />
   </game>
   <object name="room">
     <inherit name="editor_room" />
@@ -20,6 +21,10 @@
     <description>Vörös fény villog az arcodba, egy női hang mond valamit, amit nem értesz. Megpróbálsz megmozdulni de mintha szurokba lennél ragadva. Újra hallod a női hangot, most érthetőbben: '... vészhelyzeti protokol! Ébredjen!'.</description>
     <exitslistprefix>Megpróbálhatsz</exitslistprefix>
     <dropdestination type="object">player</dropdestination>
+    <onexit type="script">
+      msg ("Megpróbálod kinyitni a szemed de össze van ragadva. Valami szürcsögve lefolyik egy lefolyón és rólad mintha a takarót lerántanák: hirtelen hideg levegő csap meg. Végre tudsz mozogni, letörlöd az arcod és kinyitod a szemed.")
+      msg (" Még homályosan látsz de meg kell keresned a ruhád. Nézz körül!")
+    </onexit>
     <object name="player">
       <inherit name="editor_object" />
       <inherit name="editor_player" />
@@ -44,13 +49,22 @@
     <exit alias="northeast" to="Felébredni">
       <inherit name="northeastdirection" />
     </exit>
+    <command>
+      <pattern>segítség; s</pattern>
+      <script>
+        msg ("Írd be ezek valamelyikét: Ébredj fel, fel, kelj fel, ki")
+      </script>
+    </command>
   </object>
   <object name="Felébredni">
     <inherit name="editor_room" />
-    <description>Megpróbálod kinyitni a szemed de össze van ragadva. Valami szürcsögve lefolyik valami lefolyón és rólad mintha a takarót lerántanák hirtelen hideg levegő csap meg. Végre tudsz mozogni, letörlöd az arcod és végre ki tudod nyitni a szemed. Még homályosan látsz de meg kell keresned a ruhád. Nézz körül!</description>
+    <description>Egy steril helyiségben vagy, minden fal és bútor vakítóan fehér. Egy üveges szekrényben orvosi eszközök sorakoznak. A terem közepén egy vizsgálóasztal, körbe a falaknál öt hibernáló-kapszula sorakozik.</description>
     <usedefaultprefix type="boolean">false</usedefaultprefix>
     <prefix>Éppen próbálsz</prefix>
     <exitslistprefix>Mehetsz</exitslistprefix>
+    <beforeenter type="script">
+      picture ("image1x4.png")
+    </beforeenter>
     <exit alias="in" to="room">
       <inherit name="indirection" />
     </exit>
@@ -83,6 +97,12 @@
         RemoveObject (ruha)
       </attr>
     </object>
+    <command>
+      <pattern>segítség; s</pattern>
+      <script>
+        msg ("VIZSGÁLD SZOBA, FOG RUHA, VISEL RUHA. De semmiképpen se SZAKÍT RUHA! ")
+      </script>
+    </command>
   </object>
   <verb>
     <pattern>felébred</pattern>
@@ -113,4 +133,16 @@
     <pattern>szakít</pattern>
     <defaultexpression>Nem akarod elszakítani</defaultexpression>
   </verb>
+  <verb>
+    <pattern>segítség;s</pattern>
+    <multiobjectdefault><![CDATA[AI: <bölcsesség> nem található <@posVec4d[x,y,z,t]>]]></multiobjectdefault>
+    <property>segítség</property>
+    <separator type="string"></separator>
+    <multiobjectmenu type="string"></multiobjectmenu>
+  </verb>
+  <walkthrough name="happypath">
+    <steps type="simplestringlist">
+      felébred
+    </steps>
+  </walkthrough>
 </asl>
