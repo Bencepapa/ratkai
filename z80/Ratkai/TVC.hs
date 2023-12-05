@@ -14,6 +14,10 @@ import Ratkai.TVC.Picture as Picture
 import Z80.TVC
 import Z80.TVC.Keyboard
 import Z80.TVC.Video as Video
+import Z80.ZX0 as ZX0
+
+import Debug.Trace
+import Text.Printf
 
 import Z80
 import Z80.Utils
@@ -27,7 +31,7 @@ import System.FilePath
 import Data.Word
 import Data.Char (ord)
 import Data.Maybe (fromMaybe)
-import Data.List (intercalate)
+import Data.List (intercalate, mapAccumL)
 
 release :: Bool
 release = True
@@ -38,22 +42,13 @@ supportUndo = False
 supportQSave :: Bool
 supportQSave = True
 
-game :: Game Identity -> Z80ASM
-game assets@Game{ minItem, maxItem, startRoom } = mdo
-    let assets' = mapGameF (first BL.toStrict) . assemble . reflowMessages 31 . preprocessGame $ assets
+type CompressedBS = (BS.ByteString, BS.ByteString, Word16)
 
+game :: Game (Const BS.ByteString) -> CompressedBS -> CompressedBS -> CompressedBS -> Z80ASM
+game assets@Game{ minItem, maxItem, startRoom } text1 text2 pics = mdo
     let printCharC = call printCharC4
 
     di
-
-    -- Save current graphics settings
-    ld A [0x0b13]
-
-    -- Set video mode 4
-    ld C 1
-    syscall 4
-    setInterruptHandler intHandler
-    ei
 
     -- Set palette 1 (foreground) for text
     ld A 0b11_11_11_11
@@ -66,14 +61,11 @@ game assets@Game{ minItem, maxItem, startRoom } = mdo
     -- Clear screen
     syscall 0x05
 
-    -- -- -- Set border color
-    -- -- ld A 0b00_00_10_00
-    -- -- out [0x00] A
+    call pageVideoOut
+    call decompressData
 
-    -- -- ld HL picData
-    -- ld B 0b00_11_11_00 -- Background
-    -- ld A 0b00_00_10_00 -- Border
-    -- call displayPicture
+    setInterruptHandler intHandler
+    ei
 
     ldVia A [lineNum videoLocs] firstLine
     ldVia A [colNum videoLocs] 0
@@ -100,18 +92,81 @@ game assets@Game{ minItem, maxItem, startRoom } = mdo
                 pure ()
 
             setScreen = Just do
-                push HL
-                push IX
-                push IY
-                -- TODO: compute HL
-                call displayPicture
-                pop IY
-                pop IX
-                pop HL
+                push DE
+                call setColors
+
+                -- Picture #255 means blank screen
+                ld A C
+                inc A
+                unlessFlag Z do
+                    push HL
+                    push IX
+                    push IY
+                    -- Compute picData offset as 450 * (C - 1)
+                    ld DE 450
+                    ld HL 0
+                    dec C
+                    replicateM_ 8 do
+                        srl C
+                        unlessFlag NC $ add HL DE
+                        sla E
+                        rl D
+                    ld DE pics'
+                    add HL DE
+                    call displayPicture
+                    pop IY
+                    pop IX
+                    pop HL
+                pop DE
 
             beforeParseError = pure ()
-            waitEnter = pure () -- XXX
-            clearScreen = pure () -- XXX
+            waitEnter = do
+                push BC
+
+                ld A [0x0b11]
+                Z80.and 0xf0
+                Z80.add A 5
+                ld B A
+
+                let checkEnter = do
+                        ld A B
+                        out [0x03] A
+                        in_ A [0x58]
+                        cpl
+                        Z80.and 0b0001_0000
+
+                -- Wait for released Enter key
+                withLabel \loop -> do
+                    checkEnter
+                    jp NZ loop
+
+                -- Wait for pressed Enter key
+                withLabel \loop -> do
+                    checkEnter
+                    jp Z loop
+
+                -- Wait for released Enter key
+                withLabel \loop -> do
+                    checkEnter
+                    jp NZ loop
+                pop BC
+
+            clearScreen = do
+                call pageVideoIn
+                push BC
+                push HL
+                ld HL $ videoStart + fromIntegral firstLine * rowStride * fromIntegral charHeight
+                let bytesToClear = fromIntegral (lastLine - firstLine) * rowStride * fromIntegral charHeight
+                    (b1, b2) = wordBytes bytesToClear
+                decLoopB b1 do
+                    ld C B
+                    decLoopB b2 do
+                        ld [HL] 0
+                        inc HL
+                    ld B C
+                pop HL
+                pop BC
+                call pageVideoOut
             space = tvcChar ' '
             newline = call newLine
 
@@ -121,6 +176,7 @@ game assets@Game{ minItem, maxItem, startRoom } = mdo
     pageVideoIn <- labelled pageVideoIn_
     pageVideoOut <- labelled pageVideoOut_
     displayPicture <- labelled $ displayPicture_ pictureLocs
+    setColors <- labelled $ setColors_ pictureLocs
     intHandler <- labelled $ intHandler_ kbdBuf
 
     parseLine <- labelled $ parseLine_ assetLocs platform vars routines
@@ -305,7 +361,7 @@ game assets@Game{ minItem, maxItem, startRoom } = mdo
         pure ()
 
     videoLocs <- do
-        charset <- labelled $ db $ BL.toStrict . charSet $ assets'
+        charset <- labelled $ db $ BL.toStrict . charSet $ assets
         lineNum <- labelled $ db [0]
         colNum <- labelled $ db [0]
         drawColorIsInput <- labelled $ db [0]
@@ -367,24 +423,18 @@ game assets@Game{ minItem, maxItem, startRoom } = mdo
         call newLine
         jp newLine
 
-    -- picData <- labelled $ db pic
-    kbdBuf <- labelled $ db $ replicate (fromIntegral kbdBufLen) 0xff
-
     assetLocs <- do
-        let asset sel = labelled $ db $ getConst . sel $ assets'
-        text1 <- asset msgs1
-        text2 <- asset msgs2
+        let asset sel = labelled $ db $ getConst . sel $ assets
         dict_ <- asset dict
         scriptEnter <- asset enterRoom
         scriptAfter <- asset afterTurn
         scriptGlobal <- asset interactiveGlobal
         scriptLocal <-  asset interactiveLocal
         help <- asset helpMap
-        resetVars <- asset resetState
         resetData <- asset resetState
         return assets
-            { msgs1 = Const text1
-            , msgs2 = Const text2
+            { msgs1 = Const text1'
+            , msgs2 = Const text2'
             , dict = Const dict_
             , enterRoom = Const scriptEnter
             , afterTurn = Const scriptAfter
@@ -394,33 +444,74 @@ game assets@Game{ minItem, maxItem, startRoom } = mdo
             , helpMap = Const help
             }
 
+    kbdBuf <- labelled $ db $ replicate (fromIntegral kbdBufLen) 0xff
     vars <- do
-        moved <- labelled $ db [0]
-        inputBuf <- labelled $ resb (fromIntegral maxInput)
-        parseBuf <- labelled $ resb 5
-        gameVars <- labelled $ resb 256
+        moved <- pure 0x0100
+        inputBuf <- pure 0x0101
+        parseBuf <- pure 0x0200
+        gameVars <- pure 0x0300
         let playerScore = gameVars + 0xfc
             playerHealth = gameVars + 0xfd
             playerStatus = gameVars + 0xfe
             playerLoc = gameVars + 0xff
-        savedVars <- if supportQSave then fmap Just . labelled $ resb 256 else pure Nothing
-        undoVars <- if supportUndo then fmap Just . labelled $ resb 256 else pure Nothing
+        savedVars <- Just <$> pure 0x0400
+        undoVars <- Just <$> pure 0x0500
         return Vars{..}
+
+    decompress <- labelled do
+        ZX0.standardBack
+
+    decompressData <- labelled mdo
+        forM_ (zip [1..] $ reverse compressedItems) \(i, (compressedEnd, decompressedEnd, _)) -> do
+            msgAt i
+            ld HL compressedEnd
+            ld DE decompressedEnd
+            call decompress
+        ret
+
+        let s = "Decompressing..."
+        sptr <- labelled $ db $ map (fromIntegral . ord) s
+        let msgAt line = do
+                ld B 0x01
+                ld C line
+                syscall 0x03
+                ld DE sptr
+                ld BC $ fromIntegral $ length s
+                syscall 0x02
+        pure ()
+
+    ~compressedItems@[(_, _, text1'), (_, _, text2'), (_, _, pics')] <- compressedData [text1, text2, pics]
     pure ()
+
+compressedData :: [(BS.ByteString, BS.ByteString, Word16)] -> Z80 [(Location, Location, Location)]
+compressedData items = do
+    start <- label
+    items' <- forM items \(orig, compressed, delta) -> do
+        start <- label
+        end <- fmap (subtract 1) $ db compressed *> label
+        pure (start, end, fromIntegral . BS.length $ orig, delta)
+    let decompressedAddr orig (start, end, uncompressedLen, delta) = (end', (start, end, start', end'))
+          where
+            start' = orig + delta
+            end' = start' + uncompressedLen - 1
+    let (_, items'') = mapAccumL decompressedAddr start items'
+    forM items'' \(start, end, start', end') -> do
+        traceM $ printf "%04x..%04x -> %04x..%04x" start end start' end'
+        pure (end, end', start')
 
 toByteMap :: [(Word8, Word8)] -> BS.ByteString
 toByteMap vals = BS.pack [ fromMaybe 0xff val | addr <- [0..255], let val = lookup addr vals ]
 
 pageVideoIn_ :: Z80ASM
 pageVideoIn_ = do
-    ld A 0x50
+    ld A 0x90
     ld [0x03] A
     out [0x02] A
     ret
 
 pageVideoOut_ :: Z80ASM
 pageVideoOut_ = do
-    ld A 0x70
+    ld A 0xb0
     ld [0x03] A
     out [0x02] A
     ret

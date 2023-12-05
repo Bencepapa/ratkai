@@ -6,14 +6,23 @@ import Data.Word
 
 type RGBA8 = (Word8, Word8, Word8, Word8)
 
+picWidth :: (Num a) => a
+picWidth = 80
+
+picHeight :: (Num a) => a
+picHeight = 40
+
+picRowstride :: (Num a) => a
+picRowstride = 80
+
 hiresPixels :: BS.ByteString -> BS.ByteString -> [Word8]
-hiresPixels = hiresPixels' (10 * 8) (5 * 8) (10 * 8)
+hiresPixels = hiresPixels' picWidth picHeight picRowstride
 
 hiresPixels' :: Int -> Int -> Int -> BS.ByteString -> BS.ByteString -> [Word8]
 hiresPixels' w h rowstride colors12 bitmap =
     concatMap (uncurry applyPalette) $
-    zip (reorder rowstride w h $ toColorMap colors12) $
-    reorder rowstride w h $ BS.unpack bitmap
+    zip (reorder w h rowstride $ toColorMap colors12) $
+    reorder w h rowstride $ BS.unpack bitmap
   where
     toColorMap = concatMap (replicate 8) . BS.unpack
 
@@ -49,7 +58,7 @@ paletteC64 c = (!!(fromIntegral c .&. 0x0f))
     ]
 
 reorder :: Int -> Int -> Int -> [a] -> [a]
-reorder stride w h xs = map (xs!!) $
+reorder w h stride xs = map (xs!!) $
     [ (stride * y0) + (x * 8 + y)
     | y0 <- [0 .. (h `div` 8) - 1]
     , y <- [0..7]

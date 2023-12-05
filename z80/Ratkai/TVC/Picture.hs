@@ -17,41 +17,15 @@ import Data.Word
 import Data.Array (Array, (!), listArray)
 import Data.Bits
 
-picWidth :: (Num a) => a
-picWidth = 80
-
-picHeight :: (Num a) => a
-picHeight = 40
-
-picData :: Word8 -> BS.ByteString -> BS.ByteString
-picData picNum bs = colormap' <> reorder' bitmap
-  where
-    reorder' = BS.pack . reorder picWidth picWidth picHeight . BS.unpack
-
-    size = picHeight * (picWidth `div` 8)
-    colorSize = size `div` 8
-    bitmapAddr = 0xa000 + fromIntegral (picNum - 1) * (size + colorSize)
-    colormapAddr = bitmapAddr + size
-    bitmap = BS.take size . BS.drop bitmapAddr $ bs
-    colormap = BS.take colorSize . BS.drop colormapAddr $ bs
-
-    colormap' = BS.map toTVCColors colormap
-
-    toTVCColors :: Word8 -> Word8
-    toTVCColors = fromNybbles . both toTVCColor . nybbles
-
-fromNybbles :: (Word8, Word8) -> Word8
-fromNybbles (n1, n0) = (n1 `shiftL` 4) .|. (n0 `shiftL` 0)
-
 data Locations = Locations
     { pageVideoIn, pageVideoOut :: Location
     }
 
--- | Pre: `HL` is the start of the picture data (colormap <> bitmap)
+
 -- | Pre: `A` is the border color
 -- | Pre: `B` is the background color
-displayPicture_ :: Locations -> Z80ASM
-displayPicture_ Locations{..} = mdo
+setColors_ :: Locations -> Z80ASM
+setColors_ Locations{..} = mdo
     -- Set border
     out [0x00] A
 
@@ -69,11 +43,25 @@ displayPicture_ Locations{..} = mdo
             ld [DE] A
             inc DE
         pop BC
-    let nextRow = do
-            ld A (64 - 40)
-            add A E
-            ld E A
-            unlessFlag NC $ inc D
+
+    jp pageVideoOut
+
+-- | Pre: `HL` is the start of the picture data (colormap <> bitmap)
+-- | Pre: `A` is the border color
+-- | Pre: `B` is the background color
+displayPicture_ :: Locations -> Z80ASM
+displayPicture_ Locations{..} = mdo
+    -- Move picture data to a region outside the video RAM
+    push BC
+    push DE
+    ld DE 0x0800
+    ld BC 450 -- TODO compute this nicer
+    ldir
+    pop DE
+    pop BC
+    ld HL 0x0800
+
+    call pageVideoIn
 
     -- Draw picture
     -- IX: pointer to colormap
@@ -81,8 +69,8 @@ displayPicture_ Locations{..} = mdo
     -- IY: pointer to video memory
     push HL
     pop IX
-    ld DE $ picWidth `div` 8 * picHeight `div` 8
-    add HL DE
+    ld DE $ picWidth `div` 8 * picHeight
+    add IX DE
     ld IY $ videoStart + (8 * 64) + ((64 - 40) `div` 2)
     decLoopB (picHeight `div` 8) do
         push BC
