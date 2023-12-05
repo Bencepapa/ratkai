@@ -2,5 +2,7 @@
 [ (1 , "Vörös fény villog az arcodba, egy női hang mond valamit, amit nem értesz. Megpróbálsz megmozdulni de mintha szurokba lennél ragadva. Újra hallod a női hangot, most érthetőbben: '... vészhelyzeti protokol! Ébredjen!'. ")
 , (2 , "Kijáratok: fel ki ék")
 , (3 , "Egy steril helyiségben vagy, minden fal és bútor vakítóan fehér. Egy üveges szekrényben orvosi eszközök sorakoznak. A terem közepén egy vizsgálóasztal, körbe a falaknál öt hibernáló-kapszula sorakozik. ")
-, (4 , "Kijáratok: be fel")
+, (4 , "Kijáratok: be fel d")
+, (5 , "Ez egy teszt szoba, a földön hever egy bögre ")
+, (6 , "Kijáratok: é")
 ]

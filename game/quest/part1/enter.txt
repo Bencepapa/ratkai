@@ -8,6 +8,11 @@
 , -- ROOM 2 Felébredni
   [
      CompactMessage 3  -- Egy steril helyiségben vagy, minden fal és bútor vakítóan fehér. Egy üveges szekrényben orvosi eszközök sorakoznak. A terem közepén egy vizsgálóasztal, körbe a falaknál öt hibernáló-kapszula sorakozik.
-  ,  CompactMessage 4  -- Kijáratok: be fel
+  ,  CompactMessage 4  -- Kijáratok: be fel d
+  ]
+, -- ROOM 3 teszt
+  [
+     CompactMessage 5  -- Ez egy teszt szoba, a földön hever egy bögre
+  ,  CompactMessage 6  -- Kijáratok: é
   ]
 ]

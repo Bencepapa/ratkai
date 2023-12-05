@@ -96,6 +96,7 @@
         msg ("Elszakítod az átkozott ruhát!")
         RemoveObject (ruha)
       </attr>
+      <take />
     </object>
     <command>
       <pattern>segítség; s</pattern>
@@ -103,6 +104,9 @@
         msg ("VIZSGÁLD SZOBA, FOG RUHA, VISEL RUHA. De semmiképpen se SZAKÍT RUHA! ")
       </script>
     </command>
+    <exit alias="south" to="teszt">
+      <inherit name="southdirection" />
+    </exit>
   </object>
   <verb>
     <pattern>felébred</pattern>
@@ -139,6 +143,41 @@
     <property>segítség</property>
     <separator type="string"></separator>
     <multiobjectmenu type="string"></multiobjectmenu>
+  </verb>
+  <object name="teszt">
+    <inherit name="editor_room" />
+    <description>Ez egy teszt szoba, a földön hever egy bögre</description>
+    <exit alias="north" to="Felébredni">
+      <inherit name="northdirection" />
+    </exit>
+    <object name="bögre">
+      <inherit name="editor_object" />
+      <alias>bögre; pohár; csésze;</alias>
+      <alt type="stringlist">
+        <value>korsó</value>
+      </alt>
+      <look>Ez egy tesztbögre, kockás mintával és borzalmasan alacsony poligonszámmal</look>
+      <take />
+      <attr name="tölt" type="string"></attr>
+    </object>
+    <command>
+      <pattern>rúg bögre; felrúg bögre</pattern>
+      <unresolved>Az üres levegőbe rúgsz</unresolved>
+      <script>
+        msg ("Felrúgod a bögrét")
+      </script>
+    </command>
+    <command>
+      <pattern>rúg fal</pattern>
+      <script>
+        msg ("Megfájdul a lábad")
+      </script>
+    </command>
+  </object>
+  <verb>
+    <property>tölt</property>
+    <pattern>tölt</pattern>
+    <defaultexpression type="string"></defaultexpression>
   </verb>
   <walkthrough name="happypath">
     <steps type="simplestringlist">

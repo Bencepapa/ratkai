@@ -63,15 +63,50 @@ exitConv = {
     "down": "le",
     "out": "ki",
     "in": "be",
-    "north": "észak",
-    "south": "dél",
-    "west": "nyugat",
-    "east": "kelet",
+    "north": "é",
+    "south": "d",
+    "west": "ny",
+    "east": "k",
     "northeast": "ék",
     "northwest": "ény",
     "southeast": "dk",
     "southwest": "dny"
 }
+
+def readVerbs(doc, room):
+    global verbid
+    for item in doc.findall('./verb'):
+        pattern = item.findtext('pattern')
+        script = item.findtext('script')
+        defaultExpr = item.findtext('defaultexpression')
+        verb = verbs.get(pattern)
+        if verb:
+            if not room:
+                print(f" duplicated Verb: '{pattern}'")
+                continue
+        else:
+            aliases = pattern.split("; ")
+            aliases = list(map(lambda s : s.ljust(5)[:5], aliases))
+
+            print("verb: " + pattern)
+            verbs[pattern]={
+                'id': verbid,
+                'aliases': aliases,
+                'default': defaultExpr,
+                'script': script
+            }
+            verbid+=1
+            verb = verbs[pattern]
+        if room:
+            roomverbs = room.get('verbs')
+            if not roomverbs:
+                roomverbs = {}
+            roomverbs[pattern] = {
+                'id' : verb['id'],
+                'default': defaultExpr,
+                'script': script
+            }
+            room['verbs']=roomverbs
 
 def exitConvert(exitstring):
     global exitConv
@@ -102,26 +137,19 @@ for item in root.findall('./object'):
                 'alias' : objAlias,
                 'look' : object.findtext('look')
             }
-    rooms[roomName]={
+    room={
         'id' : roomid,
         'description': item.findtext('description'),
         'exits': exits,
     }
+    readVerbs(item, room)
+    rooms[roomName]=room
     roomid += 1
 
-for item in root.findall('./verb'):
-    pattern = item.findtext('pattern')
-    aliases = pattern.split("; ")
-    aliases = list(map(lambda s : s.ljust(5)[:5], aliases))
-    script = item.findtext('script')
-    print("verb: " + pattern)
-    verbs[pattern]={
-        'id': verbid,
-        'aliases': aliases,
-        'default': item.findtext('defaultexpression'),
-        'script': script
-    }
-    verbid+=1
+
+
+
+readVerbs(root, False)
 
 print(f"\n objects: {len(objects)}")
 print(f"\n rooms: {len(rooms)}")
@@ -260,8 +288,9 @@ with open(outpath+"interactive-local.txt", "w", encoding="utf-8") as f:
             if comma2 == "" :
                 comma2 = ","
             f.write("    ]\n")
-        for verbString in verbs:
-            verb = verbs[verbString]
+        for verbString in room.get('verbs', []):
+            #verb = verbs[verbString]
+            verb = room['verbs'][verbString]
             if verb.get('default') or verb.get('script'):
                 f.write(f"  {comma2} InputDispatch [0x{verb['id']:02x}]  -- {verb['aliases'][0]}\n")
                 f.write("    [")
@@ -312,8 +341,8 @@ with open(outpath+"help.txt", "w", encoding="utf-8") as f:
     comma = ""
     for roomName in rooms:
         room = rooms[roomName]
-        f.write(f"{comma} -- ROOM {room['id']} {roomName}\n")
-        f.write("  0")
+        f.write(f"{comma}")
+        f.write(f"  0  -- ROOM {room['id']} {roomName}\n")
         if comma == "" :
             comma = ","
     f.write("]\n")
